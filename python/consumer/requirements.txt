@@ -1,0 +1,4 @@
+python-dotenv==0.21.0
+kafka-python==2.0.2
+pendulum==2.1.2
+pymongo==4.3.3

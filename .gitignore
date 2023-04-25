@@ -1,0 +1,12 @@
+.env
+__pycache__
+__init__
+ca-cert
+ca-key
+cert-file
+ca-cert.srl
+cert-signed
+CARoot.pem
+kafka.server.keystore.jks
+kafka.server.truststore.jks
+kafka.client.truststore.jks

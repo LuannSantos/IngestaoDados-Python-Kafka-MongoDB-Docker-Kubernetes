@@ -1,0 +1,87 @@
+version: "3"
+services:
+  zookeeper:
+    image: 'bitnami/zookeeper:3.8.1'
+    ports:
+    - '2181:2181'
+    environment:
+    - ZOO_ENABLE_AUTH=yes
+    - ZOO_CLIENT_USER=admin
+    - ZOO_CLIENT_PASSWORD=adminpassword
+    - ZOO_SERVER_USERS=admin
+    - ZOO_SERVER_PASSWORDS=adminpassword
+    volumes:
+    - zookeeper_data:/bitnami/zookeeper
+  kafka:
+    image: 'bitnami/kafka:3.4.0'
+    container_name: kafka2
+    ports:
+    - '9092:9092'
+    - '29092:29092'
+    extra_hosts:
+    - "kafka1:${IP_KAFKA1}"
+    - "kafka2:127.0.0.1"
+    environment:
+    - KAFKA_BROKER_ID=2
+    - KAFKA_CFG_LISTENERS=SSL://0.0.0.0:9092,EXTERNAL://kafka:29092
+    - KAFKA_CFG_ADVERTISED_LISTENERS=SSL://kafka2:9092,EXTERNAL://${IP_KAFKA2}:29092
+    - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=SSL:SSL,EXTERNAL:SASL_SSL
+    - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+    - KAFKA_ZOOKEEPER_PROTOCOL=SASL
+    - KAFKA_ZOOKEEPER_USER=admin
+    - KAFKA_ZOOKEEPER_PASSWORD=adminpassword
+    - KAFKA_CLIENT_USERS=kafka
+    - KAFKA_CLIENT_PASSWORDS=kafkapassword
+    - KAFKA_CERTIFICATE_PASSWORD=123456 
+    - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=SSL
+    - KAFKA_TLS_TYPE=JKS
+    - KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=
+    - KAFKA_OPTS=-Djava.security.auth.login.config=/opt/bitnami/kafka/config/kafka_jaas.conf
+    - KAFKA_ENABLE_KRAFT=no
+    volumes:
+    - kafka_data:/bitnami/kafka
+    - '../config/kafka/kafka.server.keystore.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks:ro'
+    - '../config/kafka/kafka.server.truststore.jks:/opt/bitnami/kafka/config/certs/kafka.truststore.jks:ro'
+    - '../config/kafka/kafka_server_jaas.conf:/opt/bitnami/kafka/config/kafka_jaas.conf:ro'
+    - '../config/kafka/kafka.client.properties:/opt/bitnami/kafka/config/kafka_client_jaas.conf:ro'   
+    depends_on:
+    - zookeeper
+  mongodb1:
+    image: mongo:latest
+    container_name: mongodb1
+    hostname: mongodb1
+    network_mode: host
+    extra_hosts:
+    - "mongodb1:${IP_KAFKA2}"
+    ports:
+    - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+    - mongo_data1:/data/db
+    command: /usr/bin/mongod --replSet rs0 --bind_ip 127.0.0.1,mongodb1
+    depends_on:
+    - kafka
+  mongodb2:
+    image: mongo:latest
+    container_name: mongodb2
+    hostname: mongodb2
+    network_mode: host
+    extra_hosts:
+    - "mongodb2:${IP_KAFKA2}"
+    ports:
+    - "27018:27018"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+    - mongo_data2:/data/db
+    command: /usr/bin/mongod --replSet rs0 --bind_ip 127.0.0.1,mongodb2 --port 27018
+    depends_on:
+    - kafka
+volumes:
+  zookeeper_data:
+  kafka_data:
+  mongo_data1:
+  mongo_data2:
