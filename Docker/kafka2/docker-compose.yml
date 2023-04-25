@@ -2,6 +2,7 @@ version: "3"
 services:
   zookeeper:
     image: 'bitnami/zookeeper:3.8.1'
+    restart: always
     ports:
     - '2181:2181'
     environment:
@@ -13,8 +14,9 @@ services:
     volumes:
     - zookeeper_data:/bitnami/zookeeper
   kafka:
-    image: 'bitnami/kafka:3.4.0'
+    image: 'bitnami/kafka:3.1.2'
     container_name: kafka2
+    restart: always
     ports:
     - '9092:9092'
     - '29092:29092'
@@ -49,6 +51,7 @@ services:
   mongodb1:
     image: mongo:latest
     container_name: mongodb1
+    restart: always
     hostname: mongodb1
     network_mode: host
     extra_hosts:
@@ -66,6 +69,7 @@ services:
   mongodb2:
     image: mongo:latest
     container_name: mongodb2
+    restart: always
     hostname: mongodb2
     network_mode: host
     extra_hosts:
