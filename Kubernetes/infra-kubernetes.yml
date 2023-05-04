@@ -1,0 +1,289 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kafka
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafkazoointernal
+  namespace: kafka
+spec:
+  ports:
+  - name: zooclient
+    port: 2181
+    protocol: TCP
+    targetPort: 2181
+  - name: broker1
+    port: 9092
+    protocol: TCP
+    targetPort: 9092
+  - name: broker2
+    port: 9093
+    protocol: TCP
+    targetPort: 9093
+  selector:
+    app: kafkazoo
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafkazooexternal
+  namespace: kafka
+spec:
+  ports:
+  - name: external1
+    port: 29092
+    protocol: TCP
+    targetPort: 29092
+    nodePort: 32400
+  - name: external2
+    port: 29093
+    protocol: TCP
+    targetPort: 29093
+    nodePort: 32401
+  selector:
+    app: kafkazoo
+  externalIPs:
+  - <IP_HOST>
+  clusterIP: 10.97.22.130
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafkazoo
+  namespace: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafkazoo
+  template:
+    metadata:
+      labels:
+        app: kafkazoo
+    spec:
+      containers:
+      - name: zookeeper
+        image: bitnami/zookeeper:3.8.1
+        env:
+        - name: ZOO_ENABLE_AUTH
+          value: "yes"
+        - name: ZOO_CLIENT_USER
+          value: "admin"
+        - name: ZOO_CLIENT_PASSWORD
+          value: "adminpassword"
+        - name: ZOO_SERVER_USERS
+          value: "admin"
+        - name: ZOO_SERVER_PASSWORDS
+          value: "adminpassword"
+        volumeMounts:
+        - name: zookeeper-data
+          mountPath: /bitnami/zookeeper
+      - name: kafka1
+        image: bitnami/kafka:3.1.2
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "1"
+        - name: KAFKA_CFG_LISTENERS
+          value: 'SSL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092'
+        - name: KAFKA_CFG_ADVERTISED_LISTENERS
+          value: 'SSL://kafkazoointernal:9092,EXTERNAL://<IP_HOST>:29092'
+        - name: KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "SSL:SSL,EXTERNAL:SASL_SSL"
+        - name: KAFKA_CFG_ZOOKEEPER_CONNECT
+          value: "kafkazoointernal:2181"
+        - name: KAFKA_ZOOKEEPER_PROTOCOL
+          value: "SASL"
+        - name: KAFKA_ZOOKEEPER_USER
+          value: "admin"
+        - name: KAFKA_ZOOKEEPER_PASSWORD
+          value: "adminpassword"
+        - name: KAFKA_CLIENT_USERS
+          value: "kafka"
+        - name: KAFKA_CLIENT_PASSWORDS
+          value: "kafkapassword"
+        - name: KAFKA_CERTIFICATE_PASSWORD
+          value: "123456"
+        - name: KAFKA_CFG_INTER_BROKER_LISTENER_NAME
+          value: "SSL"
+        - name: KAFKA_TLS_TYPE
+          value: "JKS"
+        - name: KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM
+          value: ""
+        - name: KAFKA_OPTS
+          value: "-Djava.security.auth.login.config=/opt/bitnami/kafka/config/kafka_jaas.conf"
+        - name: KAFKA_ENABLE_KRAFT
+          value: "no"
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /bitnami/zookeeper
+        - name: kafka-server-keystore-jks
+          mountPath: /opt/bitnami/kafka/config/certs/kafka.keystore.jks
+          readOnly: true
+        - name: kafka-server-truststore-jks
+          mountPath: /opt/bitnami/kafka/config/certs/kafka.truststore.jks
+          readOnly: true
+        - name: kafka-server-jaas-conf
+          mountPath: /opt/bitnami/kafka/config/kafka_jaas.conf
+          readOnly: true
+        - name: kafka-client-properties
+          mountPath: /opt/bitnami/kafka/config/kafka_client_jaas.conf
+          readOnly: true
+      - name: kafka2
+        image: bitnami/kafka:3.1.2
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "2"
+        - name: KAFKA_CFG_LISTENERS
+          value: 'SSL://0.0.0.0:9093,EXTERNAL://0.0.0.0:29093'
+        - name: KAFKA_CFG_ADVERTISED_LISTENERS
+          value: 'SSL://kafkazoointernal:9093,EXTERNAL://<IP_HOST>:29093'
+        - name: KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "SSL:SSL,EXTERNAL:SASL_SSL"
+        - name: KAFKA_CFG_ZOOKEEPER_CONNECT
+          value: "kafkazoointernal:2181"
+        - name: KAFKA_ZOOKEEPER_PROTOCOL
+          value: "SASL"
+        - name: KAFKA_ZOOKEEPER_USER
+          value: "admin"
+        - name: KAFKA_ZOOKEEPER_PASSWORD
+          value: "adminpassword"
+        - name: KAFKA_CLIENT_USERS
+          value: "kafka"
+        - name: KAFKA_CLIENT_PASSWORDS
+          value: "kafkapassword"
+        - name: KAFKA_CERTIFICATE_PASSWORD
+          value: "123456"
+        - name: KAFKA_CFG_INTER_BROKER_LISTENER_NAME
+          value: "SSL"
+        - name: KAFKA_TLS_TYPE
+          value: "JKS"
+        - name: KAFKA_CFG_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM
+          value: ""
+        - name: KAFKA_OPTS
+          value: "-Djava.security.auth.login.config=/opt/bitnami/kafka/config/kafka_jaas.conf"
+        - name: KAFKA_ENABLE_KRAFT
+          value: "no"
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /bitnami/zookeeper
+        - name: kafka-server-keystore-jks
+          mountPath: /opt/bitnami/kafka/config/certs/kafka.keystore.jks
+          readOnly: true
+        - name: kafka-server-truststore-jks
+          mountPath: /opt/bitnami/kafka/config/certs/kafka.truststore.jks
+          readOnly: true
+        - name: kafka-server-jaas-conf
+          mountPath: /opt/bitnami/kafka/config/kafka_jaas.conf
+          readOnly: true
+        - name: kafka-client-properties
+          mountPath: /opt/bitnami/kafka/config/kafka_client_jaas.conf
+          readOnly: true
+      volumes:
+      - name: zookeeper-data
+        emptyDir: {}
+      - name: kafka-data
+        emptyDir: {}
+      - name: kafka-server-keystore-jks
+        hostPath:
+          path: /path/to/Kubernetes/config/kafka/kafka.server.keystore.jks
+          type: File
+      - name: kafka-server-truststore-jks
+        hostPath:
+          path: /path/to/Kubernetes/config/kafka/kafka.server.truststore.jks
+          type: File
+      - name: kafka-server-jaas-conf
+        hostPath:
+          path: /path/to/Kubernetes/config/kafka/kafka_server_jaas.conf
+          type: File
+      - name: kafka-client-properties
+        hostPath:
+          path: /path/to/Kubernetes/config/kafka/kafka.client.properties
+          type: File
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodbservice
+  namespace: kafka
+spec:
+  ports:
+  - name: mongoservice
+    port: 27017
+    protocol: TCP
+    targetPort: 27017
+    nodePort: 32402
+  selector:
+    app: mongoapp
+  externalIPs:
+  - <IP_HOST>
+  clusterIP: 10.97.22.131
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongopod
+  namespace: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongoapp
+  template:
+    metadata:
+      labels:
+        app: mongoapp
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:latest
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: "root"
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          value: "example"
+        command: ["/usr/bin/mongod", "--bind_ip_all"]
+        volumeMounts:
+        - name: mongo-data
+          mountPath: /data/db
+        - name: mongo-rs-init
+          mountPath: /rs-init.sh
+          readOnly: true
+        - name: mongo-init
+          mountPath: /init.js
+          readOnly: true
+      volumes:
+      - name: mongo-data
+        emptyDir: {}
+      - name: mongo-rs-init
+        hostPath:
+          path: /path/to/Kubernetes/config/mongoDB/rs-init.sh
+          type: File
+      - name: mongo-init
+        hostPath:
+          path: /path/to/Kubernetes/config/mongoDB/init.js
+          type: File
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pythonpod
+  namespace: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pythonapp
+  template:
+    metadata:
+      labels:
+        app: pythonapp
+    spec:
+      containers:
+      - name: python-kafka
+        image: masterkub:5000/python-image:latest

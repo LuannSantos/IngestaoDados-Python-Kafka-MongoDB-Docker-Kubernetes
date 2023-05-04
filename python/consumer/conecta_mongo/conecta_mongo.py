@@ -5,7 +5,7 @@ from dotenv import load_dotenv, find_dotenv
 from registrar_logs.registrar_log import registrar_log
 
 try:
-	load_dotenv(find_dotenv(filename='config/.env'))
+	load_dotenv(find_dotenv(filename='/usr/src/app/config/.env'))
 
 	HOSTS = os.environ.get("HOSTS")
 	REPLICASET = os.environ.get("REPLICASET")
@@ -15,7 +15,9 @@ try:
 	COLLECTION_MONGO = os.environ.get("COLLECTION_MONGO")
 
 	registrar_log("Realizando conexão ao MongoDB")
-	uri = f"mongodb://{KAFKA_USER}:{KAFKA_PASSWORD}@{HOSTS}/{DATABASE_MONGO}?replicaSet={REPLICASET}"
+	replicaset = f'?replicaSet={REPLICASET}' if REPLICASET != '' else ''
+
+	uri = f"mongodb://{KAFKA_USER}:{KAFKA_PASSWORD}@{HOSTS}/{DATABASE_MONGO}{replicaset}"
 	mongo_client = pymongo.MongoClient(uri)
 
 	registrar_log("Verificando o database")

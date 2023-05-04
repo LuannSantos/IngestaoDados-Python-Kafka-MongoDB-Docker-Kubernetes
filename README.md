@@ -4,9 +4,9 @@
 
 Ingestão de dados obtidos pela API api.spaceflightnewsapi no MongoDB. Os dados são capturados por um código Python que se conecta a um producer de um cluster Kafka. Então, um outro código Python que se conecta a um consumer de um cluster Kafka, consome os dados vindos do broker Kafka e os armazena em um cluster MongoDB.
 
-Toda a infraestrutura é criada através de containers Docker.
+Toda a infraestrutura é criada através de containers Docker. Além disso, foi feita uma outra versão do projeto, mas com infraestrutra criada através de Pods Kubernetes.
 
-**Tecnologias Usadas**: Python, Kafka, Zookeeper, MongoDB, Docker
+**Tecnologias Usadas**: Python, Kafka, Zookeeper, MongoDB, Docker, Kubernetes
 
 ## Preparação e Execução do Projeto
 
@@ -78,4 +78,48 @@ Com isso, será possível executar o comando:
 
 Se tudo ocorrer sem problemas, o projeto está pronto. Ou seja, foi criado um sistema que lê dados de uma API e os envia para o producer de um broker Kafka. Um consumer de um broker Kafka, captura esses dados e os armazena no cluster MongoDB. Essa captura de dados é feita em tempo real.
 
+### 2- Infraestrutura e Execução do Projeto no Kubernetes
 
+#### Infraestrutura
+
+A infraestrutura é semelhante a do Docker. Ao invés de duas máquinas, foi usada uma. Essa máquina funciona como master e worker do cluster Kubernetes. Seria possível, com poucas modificações, incluir mais máquinas no cluster.
+
+Novamente, existe uma máquina externa que contém o código python que obtém os dados da API e os envia para o producer do Kafka.
+
+Um resumo da infraestrutura pode ser verificado abaixo:
+
+<img src="./imgs/KubernetesArquitetura.png">
+
+Foram criadas, 1 instância do Zookeeper, 2 instâncias do Kafka, 1 instância do MongoDB e 1 instância do código python que realiza o consumo das mensagens.
+
+#### Execução do projeto
+
+Para executar o projeto, é necessário seguir os seguintes passos:
+
+Execute o código que irá gerar os certificados usados pelo Kafka.
+
+<code>bash ./Kubernetes/config/kafka/ssl-generate.sh</code>
+
+Assim como na infraestrutura do Docker, a senha usada nesse exemplo é "123456".
+
+Preencha no arquivo .env da pasta ./Kubernetes/.env, o IP da máquina que está sendo usada.
+
+Após isso, preencha no arquivo .env da pasta ./python/consumer/config, as variáveis requeridas que são nada mais que configurações de conexão com o Kafka e o MongoDB.
+
+Também, no arquivo infra-kubernetes.yml, substitua em todos os lugares que está escrito <IP_HOST>, pelo IP da máquina host.
+
+Após isso, execute:
+
+<code>cd ./Kubernetes</code>
+
+<code>bash start-container.sh --topico1 <NOME_TOPICO> --topico2 <NOME_TOPICO> --IP <IP_HOST></code>
+
+Nesse último comando, para os parâmetros topico, use o nome desejado para os tópicos que serão usados pelo Kafka e acessados pelo Python. E para o parâmetro <IP_HOST>, coloque o IP da máquina host.
+
+Então, na máquina externa, preencha no arquivo .env da pasta ./python/producer/config, as variáveis requeridas que novamente, são nada mais que configurações de conexão com o Kafka e o MongoDB.
+
+Com isso, será possível executar o comando:
+
+<code>python ./python/producer/kafka_producer.py</code>
+
+Se tudo ocorrer sem problemas, o projeto está pronto. Ou seja, foi criado um sistema que lê dados de uma API e os envia para o producer de um broker Kafka. Um consumer de um broker Kafka, captura esses dados e os armazena no cluster MongoDB. Essa captura de dados é feita em tempo real.

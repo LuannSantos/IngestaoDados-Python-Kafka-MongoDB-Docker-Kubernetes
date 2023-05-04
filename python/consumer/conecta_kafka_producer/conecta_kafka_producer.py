@@ -6,7 +6,7 @@ from registrar_logs.registrar_log import registrar_log
 
 
 try:
-	load_dotenv(find_dotenv(filename='config/.env'))
+	load_dotenv(find_dotenv(filename='/usr/src/app/config/.env'))
 
 	BOOTSTRAP_SERVERS = os.environ.get("BOOTSTRAP_SERVERS")
 	SASL_USER = os.environ.get("SASL_USER")
@@ -23,9 +23,9 @@ try:
 	    sasl_mechanism="PLAIN",
 	    sasl_plain_username=SASL_USER,
 	    sasl_plain_password=SASL_PASSWORD,
-	    ssl_cafile='config/CARoot.pem',
-	    ssl_certfile='config/ca-cert',
-	    ssl_keyfile='config/ca-key',
+	    ssl_cafile='/usr/src/app/config/CARoot.pem',
+	    ssl_certfile='/usr/src/app/config/ca-cert',
+	    ssl_keyfile='/usr/src/app/config/ca-key',
 	    ssl_password=SSL_PASSWORD,
 	    ssl_check_hostname=False
 	)

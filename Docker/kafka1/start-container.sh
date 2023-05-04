@@ -33,9 +33,9 @@ docker-compose up -d
 echo -e 'Realizando pausa de 200 segundos'
 sleep 200
 echo -e 'Criando topico responsável por toda ingestao de dados'
-docker exec kafka1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --topic "$topico1" --bootstrap-server localhost:9092 -replication-factor 2 --partitions 1 --command-config /opt/bitnami/ka$
+docker exec kafka1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --topic "$topico1" --bootstrap-server localhost:9092 -replication-factor 2 --partitions 1 --command-config /opt/bitnami/kafka/config/kafka_client_jaas.conf
 echo -e 'Criando topico usado para conferência de Ids'
-docker exec kafka1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --topic "$topico2" --bootstrap-server localhost:9092 -replication-factor 2 --partitions 1 --command-config /opt/bitnami/ka$
+docker exec kafka1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --topic "$topico2" --bootstrap-server localhost:9092 -replication-factor 2 --partitions 1 --command-config /opt/bitnami/kafka/config/kafka_client_jaas.conf
 echo -e 'Monta cluster MongoDB, cria database, collection e usuario'
 docker exec mongodb chmod +x /rs-init.sh
 docker exec mongodb chmod +x /init.js
